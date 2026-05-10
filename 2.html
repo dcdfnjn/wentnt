@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心海流光 · 母亲节快乐</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body {
+            background: #000;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        canvas { display: block; }
+        .text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 50px;
+            font-weight: bold;
+            text-shadow: 0 0 15px #fff, 0 0 30px #00bfff;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="heartCanvas"></canvas>
+    <div class="text">母亲节快乐！</div>
+
+    <script>
+        const canvas = document.getElementById('heartCanvas');
+        const ctx = canvas.getContext('2d');
+        let w = canvas.width = window.innerWidth;
+        let h = canvas.height = window.innerHeight;
+
+        // 粒子数组
+        let particles = [];
+        const particleCount = 2000; // 粒子数量翻倍，爱心更清晰
+
+        // 爱心参数方程，生成爱心轮廓点
+        function getHeartPoint(t, scale) {
+            const x = 16 * Math.pow(Math.sin(t), 3);
+            const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            return {
+                x: w/2 + x * scale,
+                y: h/2 + y * scale
+            };
+        }
+
+        // 粒子类：从爱心中心向外流动，带拖尾
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                // 从爱心中心附近随机位置生成
+                this.x = w / 2;
+                this.y = h / 2;
+                // 随机目标点（爱心轮廓上的点）
+                const t = Math.random() * Math.PI * 2;
+                const target = getHeartPoint(t, 18); // 调大爱心尺寸，轮廓更明显
+                this.tx = target.x;
+                this.ty = target.y;
+                // 速度：向目标点移动，模拟向外流动
+                this.vx = (this.tx - this.x) * 0.03; // 调快速度，拖尾更短，爱心更清晰
+                this.vy = (this.ty - this.y) * 0.03;
+                // 生命周期
+                this.life = 1;
+                this.decay = Math.random() * 0.005 + 0.002;
+                // 粒子大小
+                this.size = Math.random() * 2 + 1;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+                if (this.life <= 0) {
+                    this.reset();
+                }
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                // 白色粒子+蓝色发光效果，和视频一致
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.life})`;
+                ctx.shadowColor = '#00bfff';
+                ctx.shadowBlur = 15;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // 初始化粒子
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        // 动画循环：带拖尾效果
+        function animate() {
+            // 半透明黑色填充，实现拖尾
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'; // 调淡背景填充，拖尾更柔和，爱心不糊
+            ctx.fillRect(0, 0, w, h);
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        // 窗口大小变化时重置画布
+        window.addEventListener('resize', () => {
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+            // 窗口变化时重置所有粒子，防止爱心变形
+            particles.forEach(p => p.reset());
+        });
+
+        animate();
+    </script>
+</body>
+</html>
